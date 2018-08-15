@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 26
@@ -6,7 +6,7 @@ android {
 
 
     defaultConfig {
-        applicationId "work.eason.streaminglibrary"
+//        applicationId "work.eason.streaminglibrary"
         minSdkVersion 23
         targetSdkVersion 26
         versionCode 1

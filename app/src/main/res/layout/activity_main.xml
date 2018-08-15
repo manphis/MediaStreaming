@@ -20,7 +20,13 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_main" />
+    <!--<include layout="@layout/content_main" />-->
+
+    <work.eason.medialibrary.video.CameraSurfaceView
+        android:id="@+id/main_camera_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
