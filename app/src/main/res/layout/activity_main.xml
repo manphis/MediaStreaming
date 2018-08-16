@@ -22,10 +22,16 @@
 
     <!--<include layout="@layout/content_main" />-->
 
-    <work.eason.medialibrary.video.CameraSurfaceView
-        android:id="@+id/main_camera_view"
+    <!--<work.eason.medialibrary.video.CameraSurfaceView-->
+        <!--android:id="@+id/main_camera_view"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent" />-->
+
+    <SurfaceView
+        android:id="@+id/main_camera_surfaceView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
 
 
     <android.support.design.widget.FloatingActionButton

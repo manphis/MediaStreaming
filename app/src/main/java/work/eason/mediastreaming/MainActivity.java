@@ -1,10 +1,9 @@
 package work.eason.mediastreaming;
 
-import android.app.Activity;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -13,28 +12,58 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 
-import work.eason.medialibrary.video.Camera1;
-import work.eason.medialibrary.video.BaseCamera;
-import work.eason.medialibrary.video.CameraCallback;
-import work.eason.medialibrary.video.CameraSurfaceView;
+import java.lang.ref.WeakReference;
+
+import work.eason.medialibrary.engine.MediaEngine;
 import work.eason.util.GlobalDefine;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final String TAG = GlobalDefine.TAG + "MainActivity";
 
-    private Handler backgroundHandler;
+    private SurfaceView mSurfaceView;
+    private SurfaceHolder mHolder;
 
-    private CameraSurfaceView cameraSurfaceView = null;
-    private CameraSurfaceView.CameraSurfaceCallback cameraViewCallback = null;
-    private BaseCamera mCamera = null;
-    private CameraCallback cameraCallback;
+    private MainHandler mHandler;
+    private MediaEngine mediaEngine;
 
     private int screenWidth, screenHeight, degrees;
+
+    public static class MainHandler extends Handler {
+        private WeakReference<MainActivity> mWeakActivity;
+
+        public MainHandler(MainActivity activity) {
+            mWeakActivity = new WeakReference<MainActivity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            MainActivity activity = mWeakActivity.get();
+            if (activity == null) {
+                Log.d(TAG, "Got message for dead activity");
+                return;
+            }
+            Log.i(TAG, "recv msg = " + msg.what);
+
+            switch (msg.what) {
+                case MediaEngine.MSG_CAMERA_RESOLUTION:
+                    int width = msg.arg1;
+                    int height = msg.arg2;
+                    if (activity.degrees == 0 || activity.degrees == 180)
+                        activity.updateView(height, width, activity.screenWidth, activity.screenHeight, activity.mSurfaceView);
+                    else activity.updateView(width, height, activity.screenWidth, activity.screenHeight, activity.mSurfaceView);
+
+                    break;
+                default:
+                    throw new RuntimeException("Unknown message " + msg.what);
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +82,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         getScreenResolution();
-        initUI();
         initComponent();
+        initUI();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        mediaEngine.stop();
     }
 
     @Override
@@ -79,6 +115,22 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        mediaEngine.start(surfaceHolder);
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int width, int height) {
+        mediaEngine.setViewResolution(width, height);
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+
+    }
+
+
 
 
 
@@ -101,42 +153,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initUI() {
-        cameraSurfaceView = (CameraSurfaceView) findViewById(R.id.main_camera_view);
-        cameraViewCallback = new CameraSurfaceView.CameraSurfaceCallback() {
-            @Override
-            public void onSurfaceChanged(final SurfaceHolder surfaceHolder, final int format,
-                                         final int width, final int height) {
-                Log.i(TAG, "onSurfaceChanged: " + format + " " + width + " x " + height);
-                if (null == mCamera) {
-                    backgroundHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            startCamera(surfaceHolder, width, height);
-                        }
-                    });
-                }
-            }
-        };
-        cameraSurfaceView.setCameraViewCallback(cameraViewCallback);
+        mSurfaceView = (SurfaceView) findViewById(R.id.main_camera_surfaceView);
+        mHolder = mSurfaceView.getHolder();
+        mHolder.addCallback(this);
     }
 
     private void initComponent() {
-        HandlerThread thread = new HandlerThread("background_handler");
-        thread.start();
-        backgroundHandler = new Handler(thread.getLooper());
+        mHandler = new MainHandler(this);
+        mediaEngine = new MediaEngine(this, mHandler);
+        mediaEngine.setTargetResolution(640, 480);
     }
 
     private void startCamera(SurfaceHolder holder, int width, int height) {
-        cameraCallback = new CameraCallback() {
-            @Override
-            public void updateCameraResolution(int width, int height) {
-                if (degrees == 0 || degrees == 180)
-                    updateView(height, width, screenWidth, screenHeight, cameraSurfaceView);
-                else updateView(width, height, screenWidth, screenHeight, cameraSurfaceView);
-            }
-        };
-        mCamera = new Camera1(this, holder, width, height, cameraCallback);
-        mCamera.startCamera();
+//        cameraCallback = new CameraCallback() {
+//            @Override
+//            public void updateCameraResolution(int width, int height) {
+//                if (degrees == 0 || degrees == 180)
+//                    updateView(height, width, screenWidth, screenHeight, cameraSurfaceView);
+//                else updateView(width, height, screenWidth, screenHeight, cameraSurfaceView);
+//            }
+//        };
+//        mCamera = new Camera1(this, holder, width, height, cameraCallback);
+//        mCamera.startCamera();
     }
 
     private void updateView(int inWidth, int inHeight, int outWidth, int outHeight, View view) {

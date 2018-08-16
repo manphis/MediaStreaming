@@ -3,10 +3,9 @@ package work.eason.medialibrary.video;
 import android.app.Activity;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
-import android.view.Surface;
-import android.view.SurfaceHolder;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,14 +13,14 @@ import java.util.List;
 import work.eason.medialibrary.util.CameraUtil;
 import work.eason.medialibrary.util.GlobalDefine;
 
-public class Camera1 extends BaseCamera implements Camera.PreviewCallback {
-    private static final String TAG = GlobalDefine.TAG + "Camera1";
+public class CameraOnTexture extends BaseCamera {
+    private static final String TAG = GlobalDefine.TAG + "CameraOnTexture";
     private static final int FIX_FRAMERATE = 30;
     private static final int PIXEL_FORMAT = ImageFormat.NV21;
     private static final int BUFFER_NUM = 3;
 
     private Camera mCamera = null;
-    private SurfaceHolder mHolder = null;
+    private SurfaceTexture mSurfaceTexture;
     private Activity mActivity = null;
     private PixelFormat mPixelFormat = new PixelFormat();
 
@@ -29,9 +28,9 @@ public class Camera1 extends BaseCamera implements Camera.PreviewCallback {
     private int cameraFPS;
 
 
-    public Camera1(Activity activity, SurfaceHolder holder, int width, int height, CameraCallback callback) {
+    public CameraOnTexture(Activity activity, SurfaceTexture surfaceTexture, int width, int height, CameraCallback callback) {
         this.mActivity = activity;
-        this.mHolder = holder;
+        this.mSurfaceTexture = surfaceTexture;
         this.targetWidth = width;
         this.targetHeight = height;
         this.cameraCallback = callback;
@@ -47,7 +46,7 @@ public class Camera1 extends BaseCamera implements Camera.PreviewCallback {
         }
         try {
             mCamera.stopPreview();
-            mCamera.setPreviewDisplay(mHolder);
+            mCamera.setPreviewTexture(mSurfaceTexture);
             mCameraIndex = CameraUtil.getCameraInstanceId();
             CameraUtil.setCameraDisplayOrientation(mActivity, mCameraIndex, mCamera);
         } catch (IOException e) {
@@ -84,7 +83,6 @@ public class Camera1 extends BaseCamera implements Camera.PreviewCallback {
             mCamera.addCallbackBuffer(buffer);
         }
 
-        mCamera.setPreviewCallbackWithBuffer(this);
         mCamera.startPreview();
 
         cameraCallback.updateCameraResolution(cameraWidth, cameraHeight);
@@ -93,17 +91,10 @@ public class Camera1 extends BaseCamera implements Camera.PreviewCallback {
     @Override
     public void stopCamera() {
         if (mCamera != null) {
-            mCamera.setPreviewCallbackWithBuffer(null);
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
+            Log.d(TAG, "releaseCamera -- done");
         }
-    }
-
-
-
-    @Override
-    public void onPreviewFrame(byte[] bytes, Camera camera) {
-        camera.addCallbackBuffer(bytes);
     }
 }
