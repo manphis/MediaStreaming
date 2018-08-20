@@ -59,6 +59,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     else activity.updateView(width, height, activity.screenWidth, activity.screenHeight, activity.mSurfaceView);
 
                     break;
+
+                case MediaEngine.MSG_FRAME_AVAIL_ENCODER:
+                    activity.frameAvailToEncoder();
+                    break;
+
                 default:
                     throw new RuntimeException("Unknown message " + msg.what);
             }
@@ -191,5 +196,14 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         view.setLayoutParams(params);
 
+    }
+
+    private void frameAvailToEncoder() {
+        mediaEngine.frameAvailToEncoder();
+    }
+
+
+    public void startTest(View v) {
+        mediaEngine.startStreaming(degrees);
     }
 }

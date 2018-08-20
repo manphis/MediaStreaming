@@ -2,9 +2,12 @@ package work.eason.medialibrary.video;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
+import android.os.Handler;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import work.eason.medialibrary.engine.MediaEngine;
 import work.eason.medialibrary.gles.EglCore;
 import work.eason.medialibrary.gles.FullFrameRect;
 import work.eason.medialibrary.gles.Texture2dProgram;
@@ -14,8 +17,11 @@ import work.eason.medialibrary.util.GlobalDefine;
 public class EglWrapper implements SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = GlobalDefine.TAG + "EglWrapper";
 
+    private Handler activityHandler;
+
     private EglCore mEglCore;
     private WindowSurface mDisplaySurface;
+    private WindowSurface mEncoderSurface = null;
     private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
     private FullFrameRect mFullFrameBlit;
     private final float[] mTmpMatrix = new float[16];
@@ -23,8 +29,10 @@ public class EglWrapper implements SurfaceTexture.OnFrameAvailableListener {
     private int mFrameNum;
 
     private int viewWidth, viewHeight;
+    private int cameraWidth, cameraHeight;
 
-    public EglWrapper(SurfaceHolder holder) {
+    public EglWrapper(SurfaceHolder holder, Handler handler) {
+        activityHandler = handler;
         mEglCore = new EglCore(null, EglCore.FLAG_RECORDABLE);
         mDisplaySurface = new WindowSurface(mEglCore, holder.getSurface(), false);
         mDisplaySurface.makeCurrent();
@@ -41,8 +49,15 @@ public class EglWrapper implements SurfaceTexture.OnFrameAvailableListener {
     }
 
     public void setViewResolution(int width, int height) {
+        Log.i(TAG, "setViewResolution: " + width + " x " + height);
         viewWidth = width;
         viewHeight = height;
+    }
+
+    public void createEncoderSurface(Surface surface, int width, int height) {
+        cameraWidth = width;
+        cameraHeight = height;
+        mEncoderSurface = new WindowSurface(mEglCore, surface, true);
     }
 
     public void release() {
@@ -81,5 +96,16 @@ public class EglWrapper implements SurfaceTexture.OnFrameAvailableListener {
         mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
 //        drawExtra(mFrameNum, viewWidth, viewHeight);
         mDisplaySurface.swapBuffers();
+
+        if (mEncoderSurface != null) {
+            mEncoderSurface.makeCurrent();
+            GLES20.glViewport(0, 0, cameraWidth, cameraHeight);
+            mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
+//            drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
+//            mCircEncoder.frameAvailableSoon();
+            activityHandler.sendEmptyMessage(MediaEngine.MSG_FRAME_AVAIL_ENCODER);
+            mEncoderSurface.setPresentationTime(mCameraTexture.getTimestamp());
+            mEncoderSurface.swapBuffers();
+        }
     }
 }
