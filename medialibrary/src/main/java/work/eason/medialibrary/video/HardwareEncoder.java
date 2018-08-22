@@ -26,7 +26,7 @@ public class HardwareEncoder {
     private static final String MIME_TYPE = "video/avc";
     private static final int IFRAME_INTERVAL = 5;
 
-    private static final int MSG_FRAME_AVAILABLE_SOON = 1;
+    public static final int MSG_FRAME_AVAILABLE_SOON = 1;
 
     private Surface mInputSurface;
     private MediaCodec mEncoder;

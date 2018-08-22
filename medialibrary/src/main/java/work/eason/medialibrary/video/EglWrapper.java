@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
-import work.eason.medialibrary.engine.MediaEngine;
 import work.eason.medialibrary.gles.EglCore;
 import work.eason.medialibrary.gles.FullFrameRect;
 import work.eason.medialibrary.gles.Texture2dProgram;
@@ -103,7 +102,7 @@ public class EglWrapper implements SurfaceTexture.OnFrameAvailableListener {
             mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
 //            drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
 //            mCircEncoder.frameAvailableSoon();
-            activityHandler.sendEmptyMessage(MediaEngine.MSG_FRAME_AVAIL_ENCODER);
+            activityHandler.sendEmptyMessage(HardwareEncoder.MSG_FRAME_AVAILABLE_SOON);
             mEncoderSurface.setPresentationTime(mCameraTexture.getTimestamp());
             mEncoderSurface.swapBuffers();
         }

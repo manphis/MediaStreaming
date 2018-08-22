@@ -1,4 +1,4 @@
-package work.eason.medialibrary.engine;
+package work.eason.mediastreaming;
 
 import android.app.Activity;
 import android.graphics.SurfaceTexture;
@@ -11,12 +11,13 @@ import work.eason.medialibrary.video.CameraCallback;
 import work.eason.medialibrary.video.CameraOnTexture;
 import work.eason.medialibrary.video.EglWrapper;
 import work.eason.medialibrary.video.HardwareEncoder;
+import work.eason.streaminglibrary.MediaParameters;
+import work.eason.streaminglibrary.StreamEngine;
 
 public class MediaEngine {
     private static final String TAG = GlobalDefine.TAG + "MediaEngine";
 
     public static final int MSG_CAMERA_RESOLUTION = 0;
-    public static final int MSG_FRAME_AVAIL_ENCODER = 1;
 
     private static final int bitrate = 200000;
     private static final int fps = 15;
@@ -25,6 +26,7 @@ public class MediaEngine {
     private CameraCallback cameraCallback;
     private EglWrapper eglWrapper;
     private HardwareEncoder mEncoder;
+    private StreamEngine streamEngine;
 
     private Activity mActivity;
     private Handler activityHandler, backgroundHandler;
@@ -49,7 +51,11 @@ public class MediaEngine {
 
     public void stop() {
         mCamera.stopCamera();
-        mEncoder.shutDown();
+        if (null != streamEngine)
+            streamEngine.stop();
+
+        if (null != mEncoder)
+            mEncoder.shutDown();
         eglWrapper.release();
     }
 
@@ -66,7 +72,12 @@ public class MediaEngine {
         mEncoder.frameAvailableSoon();
     }
 
-    public void startStreaming(int degrees) {
+    public void startStreaming(String ip, int port) {
+        streamEngine = new StreamEngine();
+        streamEngine.start(new MediaParameters());
+    }
+
+    public void startEncode(int degrees) {
         if (degrees == 0 || degrees == 180) {
             encoderWidth = cameraHeight;
             encoderHeight = cameraWidth;

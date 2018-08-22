@@ -20,7 +20,8 @@ import android.view.ViewGroup;
 
 import java.lang.ref.WeakReference;
 
-import work.eason.medialibrary.engine.MediaEngine;
+import work.eason.medialibrary.video.HardwareEncoder;
+import work.eason.streaminglibrary.StreamEngine;
 import work.eason.util.GlobalDefine;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
@@ -60,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
                     break;
 
-                case MediaEngine.MSG_FRAME_AVAIL_ENCODER:
+                case HardwareEncoder.MSG_FRAME_AVAILABLE_SOON:
                     activity.frameAvailToEncoder();
                     break;
 
@@ -89,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         getScreenResolution();
         initComponent();
         initUI();
+
+        StreamEngine.initialize();
     }
 
     @Override
@@ -204,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
 
     public void startTest(View v) {
-        mediaEngine.startStreaming(degrees);
+//        mediaEngine.startEncode(degrees);
+
     }
 }
