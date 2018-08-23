@@ -10,27 +10,33 @@
 #include "qstream_engine.h"
 #include "qstream_callback.h"
 
+#define LOCK()   pthread_mutex_lock(&g_lock)
+#define UNLOCK() pthread_mutex_unlock(&g_lock)
+
 static void detach_current_thread (void *env);
 static jboolean native_class_init (JNIEnv* env, jclass klass);
 static jint stream_start(JNIEnv* env, jobject thiz, jobject media_para);
 static jint stream_stop(JNIEnv* env, jobject thiz);
+static jint send_frame(JNIEnv* env, jobject thiz, jbyteArray frame, jint size);
 
 static void audio_session_create(JNIEnv * env, SessionHandle* psession_handle, jclass java_audio_para_class, jobject audio_para);
 static void video_session_create(JNIEnv * env, SessionHandle* psession_handle, jclass java_video_para_class, jobject video_para);
 static void set_video_stream_para(JNIEnv * env, Stream_Para_t* para, jclass java_video_para_class, jobject video_para);
 static void media_set_media_callback(MediaEngineCallback* cb);
-
+static unsigned int covert_system_clock_to_rtp_timestamp(struct timeval time_val);
 
 static JavaVM *java_vm;
 static pthread_key_t current_jni_env;
 static JNINativeMethod native_methods[] = {
   {"nativeClassInit", "()Z", (void *) native_class_init},
   {"nativeStreamStart", "(Lwork/eason/streaminglibrary/MediaParameters;)I", (void *) stream_start},
-  {"nativeStreamStop", "(I)I", (void *) stream_stop}
+  {"nativeStreamStop", "(I)I", (void *) stream_stop},
+  {"nativeSendFrame", "([BI)I", (void *) send_frame}
 };
 
 
 QStreamHandle* g_native_handle = NULL;
+static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -113,6 +119,25 @@ static jint stream_stop(JNIEnv* env, jobject thiz) {
 
     return 0;
 }
+
+static jint send_frame(JNIEnv* env, jobject thiz, jbyteArray frame, jint size) {
+    unsigned char* frame_data = NULL;
+    unsigned int timestamp = 0;
+    struct timeval time_val;
+
+    LOCK();
+    if (g_native_handle) {
+        frame_data = (unsigned char*)(*env)->GetByteArrayElements(env, frame, NULL);
+        send_encode_frame(g_native_handle->_video_session_handle, frame_data, size, timestamp, time_val);
+    }
+    UNLOCK();
+
+    return 0;
+}
+
+
+
+
 
 //==================================================================================================
 
@@ -247,4 +272,13 @@ static jboolean native_class_init(JNIEnv* env, jclass klass) {
 /* Unregister this thread from the VM */
 static void detach_current_thread (void *env) {
   (*java_vm)->DetachCurrentThread (java_vm);
+}
+
+static unsigned int covert_system_clock_to_rtp_timestamp(struct timeval time_val) {
+    unsigned int timestamp = 0;
+
+    timestamp = (unsigned int)(time_val.tv_sec * 90000) +
+                (unsigned int)((double)time_val.tv_usec * (double)90000*1.0e-6);
+
+    return timestamp;
 }

@@ -21,7 +21,7 @@ import work.eason.medialibrary.util.GlobalDefine;
 public class HardwareEncoder {
     private static final String TAG = GlobalDefine.TAG + "HardwareEncoder";
 
-    private static final boolean TEST_SAVE_FILE = true;
+    private static final boolean TEST_SAVE_FILE = false;
     private static final String TEST_FILE_NAME = "/sdcard/hw.h264";
     private static final String MIME_TYPE = "video/avc";
     private static final int IFRAME_INTERVAL = 5;
@@ -37,6 +37,7 @@ public class HardwareEncoder {
     private BufferedOutputStream bos;
 
     private byte[] frame_info = null;
+    private EncoderCallback encoderCallback = null;
 
 
     public HardwareEncoder(int width, int height, int bitRate, int frameRate) {
@@ -92,6 +93,10 @@ public class HardwareEncoder {
 
     public Surface getInputSurface() {
         return mInputSurface;
+    }
+
+    public void setEncoderCallback(EncoderCallback callback) {
+        encoderCallback = callback;
     }
 
     public void frameAvailableSoon() {
@@ -177,6 +182,10 @@ public class HardwareEncoder {
                         } catch (IOException ioe) {
                             ioe.printStackTrace();
                         }
+                    }
+
+                    if (null != encoderCallback && null != h264_frame) {
+                        encoderCallback.onEncodeFrame(h264_frame, h264_frame.length);
                     }
 
                 }

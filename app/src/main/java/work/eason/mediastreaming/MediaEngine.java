@@ -10,6 +10,7 @@ import work.eason.medialibrary.video.BaseCamera;
 import work.eason.medialibrary.video.CameraCallback;
 import work.eason.medialibrary.video.CameraOnTexture;
 import work.eason.medialibrary.video.EglWrapper;
+import work.eason.medialibrary.video.EncoderCallback;
 import work.eason.medialibrary.video.HardwareEncoder;
 import work.eason.streaminglibrary.MediaParameters;
 import work.eason.streaminglibrary.StreamEngine;
@@ -19,14 +20,15 @@ public class MediaEngine {
 
     public static final int MSG_CAMERA_RESOLUTION = 0;
 
-    private static final int bitrate = 200000;
+    private static final int bitrate = 800000;
     private static final int fps = 15;
 
     private BaseCamera mCamera = null;
     private CameraCallback cameraCallback;
     private EglWrapper eglWrapper;
-    private HardwareEncoder mEncoder;
+    private HardwareEncoder mEncoder = null;
     private StreamEngine streamEngine;
+    private EncoderCallback encoderCallback = null;
 
     private Activity mActivity;
     private Handler activityHandler, backgroundHandler;
@@ -74,7 +76,20 @@ public class MediaEngine {
 
     public void startStreaming(String ip, int port) {
         streamEngine = new StreamEngine();
-        streamEngine.start(new MediaParameters());
+        MediaParameters params = new MediaParameters();
+        params.videoPara.host_ipaddr = ip;
+        params.videoPara.host_port = port;
+        streamEngine.start(params);
+
+        if (null != mEncoder) {
+            encoderCallback = new EncoderCallback() {
+                @Override
+                public void onEncodeFrame(byte[] frame, int size) {
+                    streamEngine.sendFrame(frame, size);
+                }
+            };
+            mEncoder.setEncoderCallback(encoderCallback);
+        }
     }
 
     public void startEncode(int degrees) {

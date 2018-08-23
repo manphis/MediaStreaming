@@ -207,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
 
     public void startTest(View v) {
-//        mediaEngine.startEncode(degrees);
-
+        mediaEngine.startEncode(degrees);
+        mediaEngine.startStreaming("172.16.13.42", 8888);
     }
 }
